@@ -56,70 +56,76 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local ok = pcall(function() screenGui.Parent = PlayerGui end)
 if not ok then screenGui.Parent = game:GetService("CoreGui") end
 
--- Sizing — much smaller than before
-local guiW    = isMobile and 260 or 290
-local guiH    = isMobile and 400 or 440
-local headerH = isMobile and 44  or 48
-local tabBarH = isMobile and 34  or 36
-local rowH    = isMobile and 44  or 48
+-- Match Kawatan sizing exactly
+local guiW    = isMobile and 230 or 255
+local guiH    = isMobile and 460 or 500
+local headerH = isMobile and 62  or 68
+local tabBarH = isMobile and 40  or 44
+local rowH    = isMobile and 54  or 58
 
-local C_BG        = Color3.fromRGB(15,  15,  19)
-local C_HEADER    = Color3.fromRGB(20,  20,  26)
-local C_ROW       = Color3.fromRGB(22,  22,  28)
-local C_ROW_ALT   = Color3.fromRGB(19,  19,  25)
-local C_DIVIDER   = Color3.fromRGB(32,  32,  42)
-local C_BLUE      = Color3.fromRGB(55,  130, 235)
-local C_BLUE_DIM  = Color3.fromRGB(35,  85,  160)
-local C_TEXT      = Color3.fromRGB(210, 210, 222)
-local C_MUTED     = Color3.fromRGB(90,  90,  108)
-local C_KNOB_OFF  = Color3.fromRGB(110, 110, 128)
-local C_TRACK_OFF = Color3.fromRGB(36,  36,  48)
+-- Colors matching Kawatan reference
+local C_BG        = Color3.fromRGB(18, 18, 24)   -- semi-transparent dark
+local C_HEADER    = Color3.fromRGB(18, 18, 24)
+local C_ROW       = Color3.fromRGB(22, 22, 30)
+local C_DIVIDER   = Color3.fromRGB(38, 38, 52)
+local C_BLUE      = Color3.fromRGB(50, 120, 230)
+local C_BLUE_DIM  = Color3.fromRGB(30, 80, 180)
+local C_TEXT      = Color3.fromRGB(205, 205, 218)
+local C_MUTED     = Color3.fromRGB(85,  85, 105)
+local C_KNOB_OFF  = Color3.fromRGB(105, 105, 125)
+local C_TRACK_OFF = Color3.fromRGB(38,  38,  52)
 
 -- ── MAIN FRAME ───────────────────────────────────────────
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, guiW, 0, guiH)
-mainFrame.Position = UDim2.new(0, isMobile and 10 or 30, 0.5, -guiH/2)
+mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)
 mainFrame.BackgroundColor3 = C_BG
+mainFrame.BackgroundTransparency = 0.28   -- transparent like Kawatan
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = screenGui
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
 
 local mfStroke = Instance.new("UIStroke")
 mfStroke.Color = C_BLUE
-mfStroke.Thickness = 1.2
-mfStroke.Transparency = 0.25
+mfStroke.Thickness = 1.8
+mfStroke.Transparency = 0.1
 mfStroke.Parent = mainFrame
 
--- pop-in animation
-mainFrame.Size = UDim2.new(0, 0, 0, 0)
-mainFrame.Position = UDim2.new(0, isMobile and 10 or 30, 0.5, 0)
+-- pop-in
+mainFrame.Size = UDim2.new(0,0,0,0)
+mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, 0)
 TweenService:Create(mainFrame,
-	TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+	TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 	{Size = UDim2.new(0,guiW,0,guiH),
-	 Position = UDim2.new(0, isMobile and 10 or 30, 0.5, -guiH/2)}):Play()
+	 Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)}):Play()
 
 -- ── HEADER ───────────────────────────────────────────────
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, headerH)
 header.BackgroundColor3 = C_HEADER
+header.BackgroundTransparency = 0.28
 header.BorderSizePixel = 0
 header.ZIndex = 5
 header.Parent = mainFrame
 
-do -- round only top corners
-	Instance.new("UICorner", header).CornerRadius = UDim.new(0,14)
-	local sq = Instance.new("Frame", header)
-	sq.Size = UDim2.new(1,0,0,14); sq.Position = UDim2.new(0,0,1,-14)
-	sq.BackgroundColor3 = C_HEADER; sq.BorderSizePixel = 0; sq.ZIndex = 5
-end
+Instance.new("UICorner", header).CornerRadius = UDim.new(0,16)
 
--- left accent bar
+-- square off bottom of header
+local hSq = Instance.new("Frame", header)
+hSq.Size = UDim2.new(1,0,0,16)
+hSq.Position = UDim2.new(0,0,1,-16)
+hSq.BackgroundColor3 = C_HEADER
+hSq.BackgroundTransparency = 0.28
+hSq.BorderSizePixel = 0
+hSq.ZIndex = 5
+
+-- blue left accent bar
 local accentBar = Instance.new("Frame", header)
-accentBar.Size = UDim2.new(0,3,0,22)
-accentBar.Position = UDim2.new(0,8,0.5,-11)
+accentBar.Size = UDim2.new(0,3,0,26)
+accentBar.Position = UDim2.new(0,8,0.5,-13)
 accentBar.BackgroundColor3 = C_BLUE
 accentBar.BorderSizePixel = 0
 accentBar.ZIndex = 6
@@ -127,79 +133,75 @@ Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0,4)
 
 -- title
 local titleLbl = Instance.new("TextLabel", header)
-titleLbl.Size = UDim2.new(1,-60,1,0)
-titleLbl.Position = UDim2.new(0,18,0,0)
+titleLbl.Size = UDim2.new(1,-64,0,24)
+titleLbl.Position = UDim2.new(0,18,0,10)
 titleLbl.BackgroundTransparency = 1
 titleLbl.Text = "ThanHub"
 titleLbl.TextColor3 = C_BLUE
-titleLbl.TextSize = isMobile and 15 or 16
+titleLbl.TextSize = isMobile and 17 or 19
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 titleLbl.ZIndex = 6
 
 -- subtitle
 local subLbl = Instance.new("TextLabel", header)
-subLbl.Size = UDim2.new(1,-60,0,12)
-subLbl.Position = UDim2.new(0,18,1,-14)
+subLbl.Size = UDim2.new(1,-64,0,14)
+subLbl.Position = UDim2.new(0,18,0, isMobile and 34 or 36)
 subLbl.BackgroundTransparency = 1
 subLbl.Text = "discord.gg/thanhub"
 subLbl.TextColor3 = C_MUTED
-subLbl.TextSize = isMobile and 8 or 9
+subLbl.TextSize = isMobile and 9 or 10
 subLbl.Font = Enum.Font.Gotham
 subLbl.TextXAlignment = Enum.TextXAlignment.Left
 subLbl.ZIndex = 6
 
+-- minimise button
+local minimized = false
+local minBtn = Instance.new("TextButton", header)
+minBtn.Size = UDim2.new(0,22,0,22)
+minBtn.Position = UDim2.new(1,-52,0.5,-11)
+minBtn.BackgroundColor3 = Color3.fromRGB(38,38,52)
+minBtn.Text = "−"
+minBtn.TextColor3 = C_MUTED
+minBtn.TextSize = 14
+minBtn.Font = Enum.Font.GothamBold
+minBtn.BorderSizePixel = 0
+minBtn.ZIndex = 7
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,6)
+
 -- close button
 local closeBtn = Instance.new("TextButton", header)
 closeBtn.Size = UDim2.new(0,22,0,22)
-closeBtn.Position = UDim2.new(1,-28,0.5,-11)
-closeBtn.BackgroundColor3 = Color3.fromRGB(170,45,45)
+closeBtn.Position = UDim2.new(1,-26,0.5,-11)
+closeBtn.BackgroundColor3 = Color3.fromRGB(190,45,45)
 closeBtn.Text = "✕"
 closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.TextSize = isMobile and 10 or 11
+closeBtn.TextSize = 11
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.BorderSizePixel = 0
 closeBtn.ZIndex = 7
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
 
 closeBtn.MouseButton1Click:Connect(function()
-	TweenService:Create(mainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+	TweenService:Create(mainFrame, TweenInfo.new(0.26, Enum.EasingStyle.Back, Enum.EasingDirection.In),
 		{Size=UDim2.new(0,0,0,0)}):Play()
-	task.delay(0.3, function() screenGui:Destroy() end)
+	task.delay(0.28, function() screenGui:Destroy() end)
 end)
-
--- ── MINIMISE BUTTON ──────────────────────────────────────
-local minimized = false
-local minBtn = Instance.new("TextButton", header)
-minBtn.Size = UDim2.new(0,22,0,22)
-minBtn.Position = UDim2.new(1,-54,0.5,-11)
-minBtn.BackgroundColor3 = Color3.fromRGB(40,40,52)
-minBtn.Text = "−"
-minBtn.TextColor3 = C_MUTED
-minBtn.TextSize = isMobile and 13 or 14
-minBtn.Font = Enum.Font.GothamBold
-minBtn.BorderSizePixel = 0
-minBtn.ZIndex = 7
-Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,6)
 
 minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
-	if minimized then
-		minBtn.Text = "+"
-		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-			{Size = UDim2.new(0,guiW,0,headerH)}):Play()
-	else
-		minBtn.Text = "−"
-		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-			{Size = UDim2.new(0,guiW,0,guiH)}):Play()
-	end
+	minBtn.Text = minimized and "+" or "−"
+	TweenService:Create(mainFrame,
+		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+		{Size = UDim2.new(0,guiW,0, minimized and headerH or guiH)}):Play()
 end)
 
 -- ── TAB BAR ──────────────────────────────────────────────
 local tabBar = Instance.new("Frame", mainFrame)
 tabBar.Size = UDim2.new(1,0,0,tabBarH)
 tabBar.Position = UDim2.new(0,0,0,headerH)
-tabBar.BackgroundColor3 = C_HEADER
+tabBar.BackgroundColor3 = Color3.fromRGB(20,20,28)
+tabBar.BackgroundTransparency = 0.28
 tabBar.BorderSizePixel = 0
 tabBar.ZIndex = 4
 
@@ -207,22 +209,22 @@ local tbLayout = Instance.new("UIListLayout", tabBar)
 tbLayout.FillDirection = Enum.FillDirection.Horizontal
 tbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 tbLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tbLayout.Padding = UDim.new(0,3)
+tbLayout.Padding = UDim.new(0,4)
 
 local tbPad = Instance.new("UIPadding", tabBar)
 tbPad.PaddingLeft = UDim.new(0,6)
 tbPad.PaddingTop = UDim.new(0,5)
 tbPad.PaddingBottom = UDim.new(0,5)
 
--- divider under tabs
-local tabDiv = Instance.new("Frame", tabBar)
-tabDiv.Size = UDim2.new(1,0,0,1)
-tabDiv.Position = UDim2.new(0,0,1,-1)
-tabDiv.BackgroundColor3 = C_DIVIDER
-tabDiv.BorderSizePixel = 0
-tabDiv.ZIndex = 5
+-- divider line under tab bar
+local tabDivLine = Instance.new("Frame", tabBar)
+tabDivLine.Size = UDim2.new(1,0,0,1)
+tabDivLine.Position = UDim2.new(0,0,1,-1)
+tabDivLine.BackgroundColor3 = C_DIVIDER
+tabDivLine.BorderSizePixel = 0
+tabDivLine.ZIndex = 5
 
--- ── SCROLL AREA ──────────────────────────────────────────
+-- ── SCROLL ───────────────────────────────────────────────
 local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
 scrollFrame.Size = UDim2.new(1,0,1,-(headerH+tabBarH))
 scrollFrame.Position = UDim2.new(0,0,0,headerH+tabBarH)
@@ -234,14 +236,15 @@ scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scrollFrame.ZIndex = 3
 
-Instance.new("UIListLayout", scrollFrame).SortOrder = Enum.SortOrder.LayoutOrder
+local scLayout = Instance.new("UIListLayout", scrollFrame)
+scLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- ── DRAG ─────────────────────────────────────────────────
 local dragging, dragStart, startPos2 = false, nil, nil
 header.InputBegan:Connect(function(inp)
 	if inp.UserInputType == Enum.UserInputType.MouseButton1
 	or inp.UserInputType == Enum.UserInputType.Touch then
-		dragging = true; dragStart = inp.Position; startPos2 = mainFrame.Position
+		dragging=true; dragStart=inp.Position; startPos2=mainFrame.Position
 	end
 end)
 UserInputService.InputChanged:Connect(function(inp)
@@ -249,72 +252,69 @@ UserInputService.InputChanged:Connect(function(inp)
 	if inp.UserInputType == Enum.UserInputType.MouseMovement
 	or inp.UserInputType == Enum.UserInputType.Touch then
 		local d = inp.Position - dragStart
-		mainFrame.Position = UDim2.new(startPos2.X.Scale, startPos2.X.Offset+d.X,
-		                               startPos2.Y.Scale, startPos2.Y.Offset+d.Y)
+		mainFrame.Position = UDim2.new(
+			startPos2.X.Scale, startPos2.X.Offset+d.X,
+			startPos2.Y.Scale, startPos2.Y.Offset+d.Y)
 	end
 end)
 UserInputService.InputEnded:Connect(function(inp)
 	if inp.UserInputType == Enum.UserInputType.MouseButton1
-	or inp.UserInputType == Enum.UserInputType.Touch then dragging = false end
+	or inp.UserInputType == Enum.UserInputType.Touch then dragging=false end
 end)
 
 -- ── TOGGLE ROW ───────────────────────────────────────────
-local function createRow(name, order, parent, isAlt)
+local function createRow(name, order, parent)
 	local row = Instance.new("Frame", parent)
 	row.Name = name
 	row.Size = UDim2.new(1,0,0,rowH)
-	row.BackgroundColor3 = isAlt and C_ROW_ALT or C_ROW
+	row.BackgroundColor3 = C_ROW
+	row.BackgroundTransparency = 0.28
 	row.BorderSizePixel = 0
 	row.LayoutOrder = order
 	row.ZIndex = 3
 
-	-- divider
+	-- bottom divider
 	local div = Instance.new("Frame", row)
-	div.Size = UDim2.new(1,-16,0,1)
-	div.Position = UDim2.new(0,8,1,-1)
+	div.Size = UDim2.new(1,0,0,1)
+	div.Position = UDim2.new(0,0,1,-1)
 	div.BackgroundColor3 = C_DIVIDER
+	div.BackgroundTransparency = 0.2
 	div.BorderSizePixel = 0
 	div.ZIndex = 4
 
 	-- label
 	local lbl = Instance.new("TextLabel", row)
 	lbl.Size = UDim2.new(1,-72,1,0)
-	lbl.Position = UDim2.new(0,12,0,0)
+	lbl.Position = UDim2.new(0,14,0,0)
 	lbl.BackgroundTransparency = 1
 	lbl.Text = name
 	lbl.TextColor3 = C_TEXT
-	lbl.TextSize = isMobile and 12 or 13
+	lbl.TextSize = isMobile and 13 or 14
 	lbl.Font = Enum.Font.GothamBold
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 	lbl.ZIndex = 4
 
-	-- track
+	-- track (bigger to match Kawatan)
 	local track = Instance.new("Frame", row)
-	track.Size = UDim2.new(0,40,0,22)
-	track.Position = UDim2.new(1,-50,0.5,-11)
+	track.Size = UDim2.new(0,46,0,26)
+	track.Position = UDim2.new(1,-56,0.5,-13)
 	track.BackgroundColor3 = C_TRACK_OFF
 	track.BorderSizePixel = 0
 	track.ZIndex = 4
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
-	local tStroke = Instance.new("UIStroke", track)
-	tStroke.Color = Color3.fromRGB(50,50,65)
-	tStroke.Thickness = 1
-	tStroke.Transparency = 0.1
+	local tSt = Instance.new("UIStroke", track)
+	tSt.Color = Color3.fromRGB(55,55,72)
+	tSt.Thickness = 1
+	tSt.Transparency = 0.1
 
-	-- knob
+	-- knob (bigger)
 	local knob = Instance.new("Frame", track)
-	knob.Size = UDim2.new(0,16,0,16)
-	knob.Position = UDim2.new(0,3,0.5,-8)
+	knob.Size = UDim2.new(0,20,0,20)
+	knob.Position = UDim2.new(0,3,0.5,-10)
 	knob.BackgroundColor3 = C_KNOB_OFF
 	knob.BorderSizePixel = 0
 	knob.ZIndex = 5
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
-
-	-- knob shadow ring
-	local knobRing = Instance.new("UIStroke", knob)
-	knobRing.Color = Color3.fromRGB(0,0,0)
-	knobRing.Thickness = 1
-	knobRing.Transparency = 0.6
 
 	-- click zone
 	local btn = Instance.new("TextButton", row)
@@ -326,29 +326,26 @@ local function createRow(name, order, parent, isAlt)
 	local isOn = false
 	local function set(state)
 		isOn = state
-		TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-			{Position = state and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8),
+		TweenService:Create(knob,
+			TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{Position = state and UDim2.new(1,-23,0.5,-10) or UDim2.new(0,3,0.5,-10),
 			 BackgroundColor3 = state and Color3.fromRGB(255,255,255) or C_KNOB_OFF}):Play()
-		TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		TweenService:Create(track,
+			TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 			{BackgroundColor3 = state and C_BLUE or C_TRACK_OFF}):Play()
-		TweenService:Create(tStroke, TweenInfo.new(0.18),
-			{Color = state and C_BLUE_DIM or Color3.fromRGB(50,50,65)}):Play()
-		TweenService:Create(lbl, TweenInfo.new(0.18),
-			{TextColor3 = state and Color3.fromRGB(230,230,245) or C_TEXT}):Play()
-
-		-- ripple
+		TweenService:Create(tSt, TweenInfo.new(0.18),
+			{Color = state and C_BLUE_DIM or Color3.fromRGB(55,55,72)}):Play()
 		if state then
 			local rip = Instance.new("Frame", row)
 			rip.Size = UDim2.new(0,0,0,0)
 			rip.Position = UDim2.new(0.5,0,0.5,0)
 			rip.BackgroundColor3 = C_BLUE
-			rip.BackgroundTransparency = 0.7
-			rip.BorderSizePixel = 0
-			rip.ZIndex = 5
+			rip.BackgroundTransparency = 0.72
+			rip.BorderSizePixel = 0; rip.ZIndex = 5
 			Instance.new("UICorner", rip).CornerRadius = UDim.new(1,0)
 			TweenService:Create(rip, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-				{Size=UDim2.new(0,240,0,240),
-				 Position=UDim2.new(0.5,-120,0.5,-120),
+				{Size=UDim2.new(0,220,0,220),
+				 Position=UDim2.new(0.5,-110,0.5,-110),
 				 BackgroundTransparency=1}):Play()
 			task.delay(0.4, function() rip:Destroy() end)
 		end
@@ -356,16 +353,14 @@ local function createRow(name, order, parent, isAlt)
 
 	btn.MouseButton1Click:Connect(function() set(not isOn) end)
 	btn.MouseEnter:Connect(function()
-		TweenService:Create(row, TweenInfo.new(0.1),
-			{BackgroundColor3 = Color3.fromRGB(28,28,36)}):Play()
+		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.1}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(row, TweenInfo.new(0.1),
-			{BackgroundColor3 = isAlt and C_ROW_ALT or C_ROW}):Play()
+		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.28}):Play()
 	end)
 end
 
--- ── BUILD TABS ───────────────────────────────────────────
+-- ── TABS ─────────────────────────────────────────────────
 local tabPages   = {}
 local tabButtons = {}
 local activeTab  = nil
@@ -373,31 +368,31 @@ local activeTab  = nil
 local function switchTab(name)
 	if activeTab == name then return end
 	activeTab = name
-	for n, pg in pairs(tabPages) do pg.Visible = (n == name) end
-	for n, tb in pairs(tabButtons) do
-		local on = (n == name)
+	for n,pg in pairs(tabPages) do pg.Visible = (n==name) end
+	for n,tb in pairs(tabButtons) do
+		local on = (n==name)
 		TweenService:Create(tb, TweenInfo.new(0.15),
-			{BackgroundColor3 = on and C_BLUE or Color3.fromRGB(28,28,38),
-			 BackgroundTransparency = 0}):Play()
+			{BackgroundColor3 = on and C_BLUE or Color3.fromRGB(28,28,40),
+			 BackgroundTransparency = on and 0 or 0.1}):Play()
 		tb.TextColor3 = on and Color3.fromRGB(255,255,255) or C_MUTED
 	end
 end
 
 for _, tab in ipairs(TABS) do
-	-- tab button
+	-- tab btn — sized to fit 4 across like Kawatan
 	local tb = Instance.new("TextButton", tabBar)
-	tb.Size = UDim2.new(0, isMobile and 54 or 62, 0, tabBarH-10)
-	tb.BackgroundColor3 = Color3.fromRGB(28,28,38)
+	tb.Size = UDim2.new(0, math.floor((guiW-20)/4)-2, 0, tabBarH-10)
+	tb.BackgroundColor3 = Color3.fromRGB(28,28,40)
+	tb.BackgroundTransparency = 0.1
 	tb.Text = tab.name
 	tb.TextColor3 = C_MUTED
 	tb.TextSize = isMobile and 10 or 11
 	tb.Font = Enum.Font.GothamBold
 	tb.BorderSizePixel = 0
 	tb.ZIndex = 5
-	Instance.new("UICorner", tb).CornerRadius = UDim.new(0,7)
+	Instance.new("UICorner", tb).CornerRadius = UDim.new(0,8)
 	tabButtons[tab.name] = tb
 
-	-- page
 	local pg = Instance.new("Frame", scrollFrame)
 	pg.Name = tab.name.."Page"
 	pg.Size = UDim2.new(1,0,0,0)
@@ -408,12 +403,12 @@ for _, tab in ipairs(TABS) do
 	pg.LayoutOrder = 1
 	pg.ZIndex = 3
 
-	local pgLayout = Instance.new("UIListLayout", pg)
-	pgLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	pgLayout.Padding = UDim.new(0,0)
+	local pgL = Instance.new("UIListLayout", pg)
+	pgL.SortOrder = Enum.SortOrder.LayoutOrder
+	pgL.Padding = UDim.new(0,0)
 
 	for j, item in ipairs(tab.items) do
-		createRow(item.name, j, pg, j%2==0)
+		createRow(item.name, j, pg)
 	end
 
 	tabPages[tab.name] = pg
@@ -425,5 +420,5 @@ switchTab(TABS[1].name)
 -- ── STROKE PULSE ─────────────────────────────────────────
 RunService.Heartbeat:Connect(function()
 	local a = (math.sin(tick()*1.4)+1)/2
-	mfStroke.Transparency = 0.1 + a*0.55
+	mfStroke.Transparency = 0.05 + a*0.45
 end)
