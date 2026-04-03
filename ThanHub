@@ -1,424 +1,706 @@
+-- ERVO HUB - Advanced Tabbed Interface with ESP
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
-local TABS = {
-	{
-		name = "Combat",
-		items = {
-			{name = "Melee Aimbot"},
-			{name = "Auto Steal Nearest"},
-			{name = "Auto Walk"},
-			{name = "Lock Target"},
-			{name = "Silent Aim"},
-			{name = "Reach Extend"},
-		}
-	},
-	{
-		name = "Player",
-		items = {
-			{name = "Infinite Jump"},
-			{name = "Speed Hack"},
-			{name = "No Clip"},
-			{name = "Anti Ragdoll"},
-			{name = "Auto Rejoin"},
-		}
-	},
-	{
-		name = "Visual",
-		items = {
-			{name = "ESP Players"},
-			{name = "Chams"},
-			{name = "Full Bright"},
-			{name = "Name Tags"},
-		}
-	},
-	{
-		name = "Settings",
-		items = {
-			{name = "Hide on Death"},
-			{name = "Mobile Mode"},
-			{name = "Notifications"},
-			{name = "Keybind Menu"},
-		}
-	},
+-- ESP Variables
+local espEnabled = false
+local espObjects = {}
+local espLines = {}
+
+-- Colors
+local colors = {
+    main = Color3.fromRGB(30, 30, 35),
+    accent = Color3.fromRGB(80, 180, 220),
+    accent2 = Color3.fromRGB(220, 80, 150),
+    text = Color3.fromRGB(245, 245, 250),
+    textDim = Color3.fromRGB(150, 150, 160),
+    success = Color3.fromRGB(80, 220, 120),
+    danger = Color3.fromRGB(220, 80, 80),
+    card = Color3.fromRGB(40, 40, 45),
 }
 
+-- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ThanHubMain"
+screenGui.Name = "ErvoHub"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local ok = pcall(function() screenGui.Parent = PlayerGui end)
-if not ok then screenGui.Parent = game:GetService("CoreGui") end
+screenGui.Parent = PlayerGui
 
--- Match Kawatan sizing exactly
-local guiW    = isMobile and 230 or 255
-local guiH    = isMobile and 460 or 500
-local headerH = isMobile and 62  or 68
-local tabBarH = isMobile and 40  or 44
-local rowH    = isMobile and 54  or 58
-
--- Colors matching Kawatan reference
-local C_BG        = Color3.fromRGB(18, 18, 24)   -- semi-transparent dark
-local C_HEADER    = Color3.fromRGB(18, 18, 24)
-local C_ROW       = Color3.fromRGB(22, 22, 30)
-local C_DIVIDER   = Color3.fromRGB(38, 38, 52)
-local C_BLUE      = Color3.fromRGB(50, 120, 230)
-local C_BLUE_DIM  = Color3.fromRGB(30, 80, 180)
-local C_TEXT      = Color3.fromRGB(205, 205, 218)
-local C_MUTED     = Color3.fromRGB(85,  85, 105)
-local C_KNOB_OFF  = Color3.fromRGB(105, 105, 125)
-local C_TRACK_OFF = Color3.fromRGB(38,  38,  52)
-
--- ── MAIN FRAME ───────────────────────────────────────────
+-- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, guiW, 0, guiH)
-mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)
-mainFrame.BackgroundColor3 = C_BG
-mainFrame.BackgroundTransparency = 0.28   -- transparent like Kawatan
+mainFrame.Size = UDim2.new(0, isMobile and 400 or 480, 0, isMobile and 600 or 650)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -300)
+mainFrame.BackgroundColor3 = colors.main
+mainFrame.BackgroundTransparency = 0.05
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = screenGui
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 16)
+mainCorner.Parent = mainFrame
 
-local mfStroke = Instance.new("UIStroke")
-mfStroke.Color = C_BLUE
-mfStroke.Thickness = 1.8
-mfStroke.Transparency = 0.1
-mfStroke.Parent = mainFrame
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(60, 60, 70)
+mainStroke.Thickness = 1
+mainStroke.Transparency = 0.3
+mainStroke.Parent = mainFrame
 
--- pop-in
-mainFrame.Size = UDim2.new(0,0,0,0)
-mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, 0)
-TweenService:Create(mainFrame,
-	TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-	{Size = UDim2.new(0,guiW,0,guiH),
-	 Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)}):Play()
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.BackgroundColor3 = colors.accent
+titleBar.BackgroundTransparency = 0.15
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
 
--- ── HEADER ───────────────────────────────────────────────
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, headerH)
-header.BackgroundColor3 = C_HEADER
-header.BackgroundTransparency = 0.28
-header.BorderSizePixel = 0
-header.ZIndex = 5
-header.Parent = mainFrame
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 16)
+titleCorner.Parent = titleBar
 
-Instance.new("UICorner", header).CornerRadius = UDim.new(0,16)
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, -20, 1, 0)
+titleText.Position = UDim2.new(0, 20, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "ERVO HUB"
+titleText.TextColor3 = colors.text
+titleText.TextSize = isMobile and 20 or 24
+titleText.Font = Enum.Font.GothamBold
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.TextYAlignment = Enum.TextYAlignment.Center
+titleText.Parent = titleBar
 
--- square off bottom of header
-local hSq = Instance.new("Frame", header)
-hSq.Size = UDim2.new(1,0,0,16)
-hSq.Position = UDim2.new(0,0,1,-16)
-hSq.BackgroundColor3 = C_HEADER
-hSq.BackgroundTransparency = 0.28
-hSq.BorderSizePixel = 0
-hSq.ZIndex = 5
+-- Subtitle
+local subText = Instance.new("TextLabel")
+subText.Size = UDim2.new(1, -20, 0, 20)
+subText.Position = UDim2.new(0, 20, 0, 50)
+subText.BackgroundTransparency = 1
+subText.Text = "choose your tools"
+subText.TextColor3 = colors.textDim
+subText.TextSize = isMobile and 11 or 12
+subText.Font = Enum.Font.Gotham
+subText.TextXAlignment = Enum.TextXAlignment.Left
+subText.Parent = mainFrame
 
--- blue left accent bar
-local accentBar = Instance.new("Frame", header)
-accentBar.Size = UDim2.new(0,3,0,26)
-accentBar.Position = UDim2.new(0,8,0.5,-13)
-accentBar.BackgroundColor3 = C_BLUE
-accentBar.BorderSizePixel = 0
-accentBar.ZIndex = 6
-Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0,4)
+-- Tab Bar
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 44)
+tabBar.Position = UDim2.new(0, 0, 0, 72)
+tabBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+tabBar.BackgroundTransparency = 0.5
+tabBar.BorderSizePixel = 0
+tabBar.Parent = mainFrame
 
--- title
-local titleLbl = Instance.new("TextLabel", header)
-titleLbl.Size = UDim2.new(1,-64,0,24)
-titleLbl.Position = UDim2.new(0,18,0,10)
-titleLbl.BackgroundTransparency = 1
-titleLbl.Text = "ThanHub"
-titleLbl.TextColor3 = C_BLUE
-titleLbl.TextSize = isMobile and 17 or 19
-titleLbl.Font = Enum.Font.GothamBold
-titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-titleLbl.ZIndex = 6
+-- Tab Buttons
+local tabs = {"MAIN", "ESP", "PLAYERS", "SETTINGS"}
+local tabButtons = {}
+local currentTab = "MAIN"
 
--- subtitle
-local subLbl = Instance.new("TextLabel", header)
-subLbl.Size = UDim2.new(1,-64,0,14)
-subLbl.Position = UDim2.new(0,18,0, isMobile and 34 or 36)
-subLbl.BackgroundTransparency = 1
-subLbl.Text = "TikTok: @ioa.fan"
-subLbl.TextColor3 = C_MUTED
-subLbl.TextSize = isMobile and 9 or 10
-subLbl.Font = Enum.Font.Gotham
-subLbl.TextXAlignment = Enum.TextXAlignment.Left
-subLbl.ZIndex = 6
+-- Content Container
+local contentContainer = Instance.new("Frame")
+contentContainer.Size = UDim2.new(1, 0, 1, -116)
+contentContainer.Position = UDim2.new(0, 0, 0, 116)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Parent = mainFrame
 
--- minimise button
-local minimized = false
-local minBtn = Instance.new("TextButton", header)
-minBtn.Size = UDim2.new(0,22,0,22)
-minBtn.Position = UDim2.new(1,-52,0.5,-11)
-minBtn.BackgroundColor3 = Color3.fromRGB(38,38,52)
-minBtn.Text = "−"
-minBtn.TextColor3 = C_MUTED
-minBtn.TextSize = 14
-minBtn.Font = Enum.Font.GothamBold
-minBtn.BorderSizePixel = 0
-minBtn.ZIndex = 7
-Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,6)
+-- Create Tabs
+for i, tabName in ipairs(tabs) do
+    local tabBtn = Instance.new("TextButton")
+    local tabWidth = 100
+    local tabX = (i - 1) * tabWidth
+    tabBtn.Size = UDim2.new(0, tabWidth, 1, 0)
+    tabBtn.Position = UDim2.new(0, tabX, 0, 0)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    tabBtn.BackgroundTransparency = 0.5
+    tabBtn.BorderSizePixel = 0
+    tabBtn.Text = tabName
+    tabBtn.TextColor3 = colors.textDim
+    tabBtn.TextSize = isMobile and 12 or 14
+    tabBtn.Font = Enum.Font.GothamBold
+    tabBtn.Parent = tabBar
+    
+    local tabIndicator = Instance.new("Frame")
+    tabIndicator.Size = UDim2.new(1, 0, 0, 3)
+    tabIndicator.Position = UDim2.new(0, 0, 1, -3)
+    tabIndicator.BackgroundColor3 = colors.accent
+    tabIndicator.BackgroundTransparency = 1
+    tabIndicator.BorderSizePixel = 0
+    tabIndicator.Parent = tabBtn
+    
+    tabButtons[tabName] = {btn = tabBtn, indicator = tabIndicator}
+    
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(tabButtons) do
+            t.indicator.BackgroundTransparency = 1
+            t.btn.TextColor3 = colors.textDim
+        end
+        tabIndicator.BackgroundTransparency = 0
+        tabBtn.TextColor3 = colors.accent
+        currentTab = tabName
+        updateContent(tabName)
+    end)
+end
 
--- close button
-local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0,22,0,22)
-closeBtn.Position = UDim2.new(1,-26,0.5,-11)
-closeBtn.BackgroundColor3 = Color3.fromRGB(190,45,45)
-closeBtn.Text = "✕"
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.TextSize = 11
-closeBtn.Font = Enum.Font.GothamBold
+-- Content Pages
+local contentPages = {}
+
+-- ============ MAIN TAB ============
+local mainPage = Instance.new("ScrollingFrame")
+mainPage.Size = UDim2.new(1, 0, 1, 0)
+mainPage.BackgroundTransparency = 1
+mainPage.ScrollBarThickness = isMobile and 4 or 6
+mainPage.ScrollBarImageColor3 = colors.accent
+mainPage.Parent = contentContainer
+contentPages["MAIN"] = mainPage
+
+local mainLayout = Instance.new("UIListLayout")
+mainLayout.Padding = UDim.new(0, 12)
+mainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mainLayout.Parent = mainPage
+
+-- Stats Card
+local statsCard = createCard(mainPage, "STATS", 0)
+local statsText = Instance.new("TextLabel")
+statsText.Size = UDim2.new(1, -20, 0, 60)
+statsText.Position = UDim2.new(0, 10, 0, 40)
+statsText.BackgroundTransparency = 1
+statsText.Text = "$2.88T\nFriend Boost: +0%"
+statsText.TextColor3 = colors.text
+statsText.TextSize = isMobile and 14 or 16
+statsText.Font = Enum.Font.GothamBold
+statsText.TextXAlignment = Enum.TextXAlignment.Left
+statsText.TextYAlignment = Enum.TextYAlignment.Top
+statsText.Parent = statsCard
+
+-- Features
+local features = {
+    {name = "Cash Multi", order = 1, enabled = false},
+    {name = "Auto Steal Nearest", order = 2, enabled = false},
+    {name = "Auto Walk", order = 3, enabled = false},
+    {name = "Lock Target", order = 4, enabled = false},
+    {name = "Silent Aim", order = 5, enabled = false},
+}
+
+for _, feature in ipairs(features) do
+    createToggle(mainPage, feature.name, feature.order, function(enabled)
+        print("[ERVO HUB] " .. feature.name .. ": " .. tostring(enabled))
+        if feature.name == "Auto Walk" and enabled then
+            autoWalk()
+        end
+    end)
+end
+
+-- ============ ESP TAB ============
+local espPage = Instance.new("ScrollingFrame")
+espPage.Size = UDim2.new(1, 0, 1, 0)
+espPage.BackgroundTransparency = 1
+espPage.ScrollBarThickness = isMobile and 4 or 6
+espPage.Visible = false
+espPage.Parent = contentContainer
+contentPages["ESP"] = espPage
+
+local espLayout = Instance.new("UIListLayout")
+espLayout.Padding = UDim.new(0, 12)
+espLayout.SortOrder = Enum.SortOrder.LayoutOrder
+espLayout.Parent = espPage
+
+-- ESP Toggle
+createToggle(espPage, "Enable ESP", 1, function(enabled)
+    espEnabled = enabled
+    if enabled then
+        setupESP()
+    else
+        clearESP()
+    end
+end)
+
+-- ESP Settings
+local espSettings = {
+    {name = "Box ESP", order = 2, enabled = true},
+    {name = "Name ESP", order = 3, enabled = true},
+    {name = "Distance ESP", order = 4, enabled = true},
+    {name = "Health Bar", order = 5, enabled = true},
+    {name = "Tracer Line", order = 6, enabled = false},
+    {name = "Team Check", order = 7, enabled = true},
+}
+
+local espOptions = {}
+for _, setting in ipairs(espSettings) do
+    createToggle(espPage, setting.name, setting.order, function(enabled)
+        espOptions[setting.name] = enabled
+        if espEnabled then
+            refreshESP()
+        end
+    end)
+    espOptions[setting.name] = setting.enabled
+end
+
+-- Color Pickers
+createColorPicker(espPage, "Box Color", 8, Color3.fromRGB(80, 180, 220), function(color)
+    espBoxColor = color
+    refreshESP()
+end)
+
+createColorPicker(espPage, "Name Color", 9, Color3.fromRGB(255, 255, 255), function(color)
+    espNameColor = color
+    refreshESP()
+end)
+
+-- ============ PLAYERS TAB ============
+local playersPage = Instance.new("ScrollingFrame")
+playersPage.Size = UDim2.new(1, 0, 1, 0)
+playersPage.BackgroundTransparency = 1
+playersPage.ScrollBarThickness = isMobile and 4 or 6
+playersPage.Visible = false
+playersPage.Parent = contentContainer
+contentPages["PLAYERS"] = playersPage
+
+local playersLayout = Instance.new("UIListLayout")
+playersLayout.Padding = UDim.new(0, 12)
+playersLayout.SortOrder = Enum.SortOrder.LayoutOrder
+playersLayout.Parent = playersPage
+
+-- Player List Header
+local headerCard = createCard(playersPage, "ONLINE PLAYERS", 0)
+local playerListFrame = Instance.new("ScrollingFrame")
+playerListFrame.Size = UDim2.new(1, -20, 0, 300)
+playerListFrame.Position = UDim2.new(0, 10, 0, 45)
+playerListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+playerListFrame.BackgroundTransparency = 0.3
+playerListFrame.BorderSizePixel = 0
+playerListFrame.ScrollBarThickness = 4
+playerListFrame.Parent = headerCard
+
+local playerListCorner = Instance.new("UICorner")
+playerListCorner.CornerRadius = UDim.new(0, 8)
+playerListCorner.Parent = playerListFrame
+
+local playerListLayout = Instance.new("UIListLayout")
+playerListLayout.Padding = UDim.new(0, 4)
+playerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+playerListLayout.Parent = playerListFrame
+
+-- Update player list
+local function updatePlayerList()
+    for _, child in pairs(playerListFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local order = 0
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            order = order + 1
+            local playerBtn = Instance.new("TextButton")
+            playerBtn.Size = UDim2.new(1, 0, 0, 35)
+            playerBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+            playerBtn.BackgroundTransparency = 0.5
+            playerBtn.BorderSizePixel = 0
+            playerBtn.Text = player.Name .. " - " .. math.floor((player.Character and player.Character.Humanoid and player.Character.Humanoid.Health or 0)) .. " HP"
+            playerBtn.TextColor3 = colors.text
+            playerBtn.TextSize = isMobile and 12 or 13
+            playerBtn.Font = Enum.Font.Gotham
+            playerBtn.TextXAlignment = Enum.TextXAlignment.Left
+            playerBtn.TextTruncate = Enum.TextTruncate.AtEnd
+            playerBtn.Parent = playerListFrame
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 6)
+            btnCorner.Parent = playerBtn
+            
+            -- Target button on hover
+            playerBtn.MouseButton1Click:Connect(function()
+                print("[ERVO HUB] Targeting: " .. player.Name)
+                -- Add targeting logic here
+            end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
+
+-- ============ SETTINGS TAB ============
+local settingsPage = Instance.new("ScrollingFrame")
+settingsPage.Size = UDim2.new(1, 0, 1, 0)
+settingsPage.BackgroundTransparency = 1
+settingsPage.ScrollBarThickness = isMobile and 4 or 6
+settingsPage.Visible = false
+settingsPage.Parent = contentContainer
+contentPages["SETTINGS"] = settingsPage
+
+local settingsLayout = Instance.new("UIListLayout")
+settingsLayout.Padding = UDim.new(0, 12)
+settingsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+settingsLayout.Parent = settingsPage
+
+-- UI Settings
+createToggle(settingsPage, "Mobile Optimized", 1, function(enabled)
+    -- Mobile optimization toggle
+end)
+
+createToggle(settingsPage, "Sound Effects", 2, function(enabled)
+    -- Sound effects toggle
+end)
+
+createToggle(settingsPage, "Notifications", 3, function(enabled)
+    -- Notifications toggle
+end)
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0.9, 0, 0, 45)
+closeBtn.Position = UDim2.new(0.05, 0, 0, 0)
+closeBtn.BackgroundColor3 = colors.danger
+closeBtn.BackgroundTransparency = 0.2
 closeBtn.BorderSizePixel = 0
-closeBtn.ZIndex = 7
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+closeBtn.Text = "CLOSE HUB"
+closeBtn.TextColor3 = colors.text
+closeBtn.TextSize = isMobile and 14 or 16
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = settingsPage
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
 
 closeBtn.MouseButton1Click:Connect(function()
-	TweenService:Create(mainFrame, TweenInfo.new(0.26, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-		{Size=UDim2.new(0,0,0,0)}):Play()
-	task.delay(0.28, function() screenGui:Destroy() end)
+    screenGui:Destroy()
+    clearESP()
 end)
 
-minBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	minBtn.Text = minimized and "+" or "−"
-	TweenService:Create(mainFrame,
-		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-		{Size = UDim2.new(0,guiW,0, minimized and headerH or guiH)}):Play()
-end)
-
--- ── TAB BAR ──────────────────────────────────────────────
-local tabBar = Instance.new("Frame", mainFrame)
-tabBar.Size = UDim2.new(1,0,0,tabBarH)
-tabBar.Position = UDim2.new(0,0,0,headerH)
-tabBar.BackgroundColor3 = Color3.fromRGB(20,20,28)
-tabBar.BackgroundTransparency = 0.28
-tabBar.BorderSizePixel = 0
-tabBar.ZIndex = 4
-
-local tbLayout = Instance.new("UIListLayout", tabBar)
-tbLayout.FillDirection = Enum.FillDirection.Horizontal
-tbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-tbLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tbLayout.Padding = UDim.new(0,4)
-
-local tbPad = Instance.new("UIPadding", tabBar)
-tbPad.PaddingLeft = UDim.new(0,6)
-tbPad.PaddingTop = UDim.new(0,5)
-tbPad.PaddingBottom = UDim.new(0,5)
-
--- divider line under tab bar
-local tabDivLine = Instance.new("Frame", tabBar)
-tabDivLine.Size = UDim2.new(1,0,0,1)
-tabDivLine.Position = UDim2.new(0,0,1,-1)
-tabDivLine.BackgroundColor3 = C_DIVIDER
-tabDivLine.BorderSizePixel = 0
-tabDivLine.ZIndex = 5
-
--- ── SCROLL ───────────────────────────────────────────────
-local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
-scrollFrame.Size = UDim2.new(1,0,1,-(headerH+tabBarH))
-scrollFrame.Position = UDim2.new(0,0,0,headerH+tabBarH)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = 2
-scrollFrame.ScrollBarImageColor3 = C_BLUE
-scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
-scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scrollFrame.ZIndex = 3
-
-local scLayout = Instance.new("UIListLayout", scrollFrame)
-scLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- ── DRAG ─────────────────────────────────────────────────
-local dragging, dragStart, startPos2 = false, nil, nil
-header.InputBegan:Connect(function(inp)
-	if inp.UserInputType == Enum.UserInputType.MouseButton1
-	or inp.UserInputType == Enum.UserInputType.Touch then
-		dragging=true; dragStart=inp.Position; startPos2=mainFrame.Position
-	end
-end)
-UserInputService.InputChanged:Connect(function(inp)
-	if not dragging then return end
-	if inp.UserInputType == Enum.UserInputType.MouseMovement
-	or inp.UserInputType == Enum.UserInputType.Touch then
-		local d = inp.Position - dragStart
-		mainFrame.Position = UDim2.new(
-			startPos2.X.Scale, startPos2.X.Offset+d.X,
-			startPos2.Y.Scale, startPos2.Y.Offset+d.Y)
-	end
-end)
-UserInputService.InputEnded:Connect(function(inp)
-	if inp.UserInputType == Enum.UserInputType.MouseButton1
-	or inp.UserInputType == Enum.UserInputType.Touch then dragging=false end
-end)
-
--- ── TOGGLE ROW ───────────────────────────────────────────
-local function createRow(name, order, parent)
-	local row = Instance.new("Frame", parent)
-	row.Name = name
-	row.Size = UDim2.new(1,0,0,rowH)
-	row.BackgroundColor3 = C_ROW
-	row.BackgroundTransparency = 0.28
-	row.BorderSizePixel = 0
-	row.LayoutOrder = order
-	row.ZIndex = 3
-
-	-- bottom divider
-	local div = Instance.new("Frame", row)
-	div.Size = UDim2.new(1,0,0,1)
-	div.Position = UDim2.new(0,0,1,-1)
-	div.BackgroundColor3 = C_DIVIDER
-	div.BackgroundTransparency = 0.2
-	div.BorderSizePixel = 0
-	div.ZIndex = 4
-
-	-- label
-	local lbl = Instance.new("TextLabel", row)
-	lbl.Size = UDim2.new(1,-72,1,0)
-	lbl.Position = UDim2.new(0,14,0,0)
-	lbl.BackgroundTransparency = 1
-	lbl.Text = name
-	lbl.TextColor3 = C_TEXT
-	lbl.TextSize = isMobile and 13 or 14
-	lbl.Font = Enum.Font.GothamBold
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.ZIndex = 4
-
-	-- track (bigger to match Kawatan)
-	local track = Instance.new("Frame", row)
-	track.Size = UDim2.new(0,46,0,26)
-	track.Position = UDim2.new(1,-56,0.5,-13)
-	track.BackgroundColor3 = C_TRACK_OFF
-	track.BorderSizePixel = 0
-	track.ZIndex = 4
-	Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
-	local tSt = Instance.new("UIStroke", track)
-	tSt.Color = Color3.fromRGB(55,55,72)
-	tSt.Thickness = 1
-	tSt.Transparency = 0.1
-
-	-- knob (bigger)
-	local knob = Instance.new("Frame", track)
-	knob.Size = UDim2.new(0,20,0,20)
-	knob.Position = UDim2.new(0,3,0.5,-10)
-	knob.BackgroundColor3 = C_KNOB_OFF
-	knob.BorderSizePixel = 0
-	knob.ZIndex = 5
-	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
-
-	-- click zone
-	local btn = Instance.new("TextButton", row)
-	btn.Size = UDim2.new(1,0,1,0)
-	btn.BackgroundTransparency = 1
-	btn.Text = ""
-	btn.ZIndex = 6
-
-	local isOn = false
-	local function set(state)
-		isOn = state
-		TweenService:Create(knob,
-			TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-			{Position = state and UDim2.new(1,-23,0.5,-10) or UDim2.new(0,3,0.5,-10),
-			 BackgroundColor3 = state and Color3.fromRGB(255,255,255) or C_KNOB_OFF}):Play()
-		TweenService:Create(track,
-			TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{BackgroundColor3 = state and C_BLUE or C_TRACK_OFF}):Play()
-		TweenService:Create(tSt, TweenInfo.new(0.18),
-			{Color = state and C_BLUE_DIM or Color3.fromRGB(55,55,72)}):Play()
-		if state then
-			local rip = Instance.new("Frame", row)
-			rip.Size = UDim2.new(0,0,0,0)
-			rip.Position = UDim2.new(0.5,0,0.5,0)
-			rip.BackgroundColor3 = C_BLUE
-			rip.BackgroundTransparency = 0.72
-			rip.BorderSizePixel = 0; rip.ZIndex = 5
-			Instance.new("UICorner", rip).CornerRadius = UDim.new(1,0)
-			TweenService:Create(rip, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-				{Size=UDim2.new(0,220,0,220),
-				 Position=UDim2.new(0.5,-110,0.5,-110),
-				 BackgroundTransparency=1}):Play()
-			task.delay(0.4, function() rip:Destroy() end)
-		end
-	end
-
-	btn.MouseButton1Click:Connect(function() set(not isOn) end)
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.1}):Play()
-	end)
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.28}):Play()
-	end)
+-- Function to update content
+function updateContent(tabName)
+    for name, page in pairs(contentPages) do
+        page.Visible = (name == tabName)
+    end
 end
 
--- ── TABS ─────────────────────────────────────────────────
-local tabPages   = {}
-local tabButtons = {}
-local activeTab  = nil
-
-local function switchTab(name)
-	if activeTab == name then return end
-	activeTab = name
-	for n,pg in pairs(tabPages) do pg.Visible = (n==name) end
-	for n,tb in pairs(tabButtons) do
-		local on = (n==name)
-		TweenService:Create(tb, TweenInfo.new(0.15),
-			{BackgroundColor3 = on and C_BLUE or Color3.fromRGB(28,28,40),
-			 BackgroundTransparency = on and 0 or 0.1}):Play()
-		tb.TextColor3 = on and Color3.fromRGB(255,255,255) or C_MUTED
-	end
+-- Helper Functions for UI Elements
+function createCard(parent, title, order)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, -20, 0, 100)
+    card.Position = UDim2.new(0, 10, 0, 0)
+    card.BackgroundColor3 = colors.card
+    card.BackgroundTransparency = 0.3
+    card.BorderSizePixel = 0
+    card.Parent = parent
+    
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 12)
+    cardCorner.Parent = card
+    
+    local cardTitle = Instance.new("TextLabel")
+    cardTitle.Size = UDim2.new(1, -20, 0, 30)
+    cardTitle.Position = UDim2.new(0, 10, 0, 5)
+    cardTitle.BackgroundTransparency = 1
+    cardTitle.Text = title
+    cardTitle.TextColor3 = colors.accent
+    cardTitle.TextSize = isMobile and 14 or 16
+    cardTitle.Font = Enum.Font.GothamBold
+    cardTitle.TextXAlignment = Enum.TextXAlignment.Left
+    cardTitle.Parent = card
+    
+    local layoutOrder = Instance.new("IntValue")
+    layoutOrder.Name = "LayoutOrder"
+    layoutOrder.Value = order
+    layoutOrder.Parent = card
+    
+    return card
 end
 
-for _, tab in ipairs(TABS) do
-	-- tab btn — sized to fit 4 across like Kawatan
-	local tb = Instance.new("TextButton", tabBar)
-	tb.Size = UDim2.new(0, math.floor((guiW-20)/4)-2, 0, tabBarH-10)
-	tb.BackgroundColor3 = Color3.fromRGB(28,28,40)
-	tb.BackgroundTransparency = 0.1
-	tb.Text = tab.name
-	tb.TextColor3 = C_MUTED
-	tb.TextSize = isMobile and 10 or 11
-	tb.Font = Enum.Font.GothamBold
-	tb.BorderSizePixel = 0
-	tb.ZIndex = 5
-	Instance.new("UICorner", tb).CornerRadius = UDim.new(0,8)
-	tabButtons[tab.name] = tb
-
-	local pg = Instance.new("Frame", scrollFrame)
-	pg.Name = tab.name.."Page"
-	pg.Size = UDim2.new(1,0,0,0)
-	pg.AutomaticSize = Enum.AutomaticSize.Y
-	pg.BackgroundTransparency = 1
-	pg.BorderSizePixel = 0
-	pg.Visible = false
-	pg.LayoutOrder = 1
-	pg.ZIndex = 3
-
-	local pgL = Instance.new("UIListLayout", pg)
-	pgL.SortOrder = Enum.SortOrder.LayoutOrder
-	pgL.Padding = UDim.new(0,0)
-
-	for j, item in ipairs(tab.items) do
-		createRow(item.name, j, pg)
-	end
-
-	tabPages[tab.name] = pg
-	tb.MouseButton1Click:Connect(function() switchTab(tab.name) end)
+function createToggle(parent, text, order, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Size = UDim2.new(1, -20, 0, 45)
+    toggleFrame.Position = UDim2.new(0, 10, 0, 0)
+    toggleFrame.BackgroundColor3 = colors.card
+    toggleFrame.BackgroundTransparency = 0.3
+    toggleFrame.BorderSizePixel = 0
+    toggleFrame.Parent = parent
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 8)
+    frameCorner.Parent = toggleFrame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, -10, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = colors.text
+    label.TextSize = isMobile and 12 or 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = toggleFrame
+    
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(0, 50, 0, 25)
+    toggleBtn.Position = UDim2.new(1, -60, 0.5, -12.5)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Text = ""
+    toggleBtn.Parent = toggleFrame
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(1, 0)
+    toggleCorner.Parent = toggleBtn
+    
+    local toggleIndicator = Instance.new("Frame")
+    toggleIndicator.Size = UDim2.new(0, 21, 0, 21)
+    toggleIndicator.Position = UDim2.new(0, 2, 0.5, -10.5)
+    toggleIndicator.BackgroundColor3 = colors.text
+    toggleIndicator.BorderSizePixel = 0
+    toggleIndicator.Parent = toggleBtn
+    
+    local indicatorCorner = Instance.new("UICorner")
+    indicatorCorner.CornerRadius = UDim.new(1, 0)
+    indicatorCorner.Parent = toggleIndicator
+    
+    local enabled = false
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            toggleBtn.BackgroundColor3 = colors.success
+            toggleIndicator.Position = UDim2.new(1, -23, 0.5, -10.5)
+        else
+            toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+            toggleIndicator.Position = UDim2.new(0, 2, 0.5, -10.5)
+        end
+        callback(enabled)
+    end)
+    
+    local layoutOrder = Instance.new("IntValue")
+    layoutOrder.Name = "LayoutOrder"
+    layoutOrder.Value = order
+    layoutOrder.Parent = toggleFrame
+    
+    return toggleFrame
 end
 
-switchTab(TABS[1].name)
+function createColorPicker(parent, text, order, defaultColor, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 50)
+    frame.Position = UDim2.new(0, 10, 0, 0)
+    frame.BackgroundColor3 = colors.card
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 8)
+    frameCorner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, -10, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = colors.text
+    label.TextSize = isMobile and 12 or 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+    
+    local colorDisplay = Instance.new("Frame")
+    colorDisplay.Size = UDim2.new(0, 40, 0, 30)
+    colorDisplay.Position = UDim2.new(0.85, 0, 0.5, -15)
+    colorDisplay.BackgroundColor3 = defaultColor
+    colorDisplay.BorderSizePixel = 1
+    colorDisplay.BorderColor3 = colors.textDim
+    colorDisplay.Parent = frame
+    
+    local displayCorner = Instance.new("UICorner")
+    displayCorner.CornerRadius = UDim.new(0, 6)
+    displayCorner.Parent = colorDisplay
+    
+    local layoutOrder = Instance.new("IntValue")
+    layoutOrder.Name = "LayoutOrder"
+    layoutOrder.Value = order
+    layoutOrder.Parent = frame
+end
 
--- ── STROKE PULSE ─────────────────────────────────────────
-RunService.Heartbeat:Connect(function()
-	local a = (math.sin(tick()*1.4)+1)/2
-	mfStroke.Transparency = 0.05 + a*0.45
-end)
+-- ESP Functions
+local espBoxColor = colors.accent
+local espNameColor = colors.text
+
+function setupESP()
+    clearESP()
+    RunService.RenderStepped:Connect(function()
+        if not espEnabled then return end
+        updateESP()
+    end)
+end
+
+function updateESP()
+    clearESP()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local character = player.Character
+            local rootPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+            if rootPart and Camera then
+                local vector, onScreen = Camera:WorldToScreenPoint(rootPart.Position)
+                if onScreen then
+                    local yOffset = 3
+                    local headPos = character:FindFirstChild("Head")
+                    local headScreen = headPos and Camera:WorldToScreenPoint(headPos.Position) or vector
+                    
+                    if espOptions["Box ESP"] then
+                        createBoxESP(vector, headScreen, player, espBoxColor)
+                    end
+                    
+                    if espOptions["Name ESP"] then
+                        createNameESP(vector, player, espNameColor)
+                    end
+                    
+                    if espOptions["Distance ESP"] then
+                        createDistanceESP(vector, player)
+                    end
+                    
+                    if espOptions["Health Bar"] then
+                        createHealthBar(vector, player)
+                    end
+                    
+                    if espOptions["Tracer Line"] then
+                        createTracer(vector, player)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function createBoxESP(vector, headScreen, player, color)
+    local box = Instance.new("Frame")
+    box.Size = UDim2.new(0, 40, 0, 60)
+    box.Position = UDim2.new(0, vector.X - 20, 0, headScreen.Y - 60)
+    box.BackgroundColor3 = color
+    box.BackgroundTransparency = 0.7
+    box.BorderSizePixel = 1
+    box.BorderColor3 = color
+    box.Parent = screenGui
+    
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4)
+    boxCorner.Parent = box
+    
+    table.insert(espObjects, box)
+end
+
+function createNameESP(vector, player, color)
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(0, 100, 0, 20)
+    nameLabel.Position = UDim2.new(0, vector.X - 50, 0, vector.Y - 70)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = color
+    nameLabel.TextSize = 12
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.Parent = screenGui
+    
+    table.insert(espObjects, nameLabel)
+end
+
+function createDistanceESP(vector, player)
+    local distance = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and 
+                     player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Size = UDim2.new(0, 50, 0, 15)
+    distanceText.Position = UDim2.new(0, vector.X - 25, 0, vector.Y - 50)
+    distanceText.BackgroundTransparency = 1
+    distanceText.Text = math.floor(distance) .. "m"
+    distanceText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    distanceText.TextSize = 10
+    distanceText.Font = Enum.Font.Gotham
+    distanceText.Parent = screenGui
+    
+    table.insert(espObjects, distanceText)
+end
+
+function createHealthBar(vector, player)
+    local health = player.Character.Humanoid.Health
+    local maxHealth = player.Character.Humanoid.MaxHealth
+    local healthPercent = health / maxHealth
+    
+    local healthBg = Instance.new("Frame")
+    healthBg.Size = UDim2.new(0, 40, 0, 5)
+    healthBg.Position = UDim2.new(0, vector.X - 20, 0, vector.Y + 15)
+    healthBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    healthBg.BorderSizePixel = 0
+    healthBg.Parent = screenGui
+    
+    local healthFill = Instance.new("Frame")
+    healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+    healthFill.BackgroundColor3 = Color3.fromRGB(80, 220, 80)
+    healthFill.BorderSizePixel = 0
+    healthFill.Parent = healthBg
+    
+    table.insert(espObjects, healthBg)
+    table.insert(espObjects, healthFill)
+end
+
+function createTracer(vector, player)
+    local cameraPos = Camera.CFrame.Position
+    local playerPos = player.Character.HumanoidRootPart.Position
+    local screenPoint = Camera:WorldToScreenPoint(playerPos)
+    
+    local tracer = Instance.new("Frame")
+    tracer.Size = UDim2.new(0, 2, 0, screenPoint.Y)
+    tracer.Position = UDim2.new(0, screenPoint.X - 1, 0, screenPoint.Y)
+    tracer.BackgroundColor3 = colors.accent
+    tracer.BackgroundTransparency = 0.5
+    tracer.BorderSizePixel = 0
+    tracer.Parent = screenGui
+    
+    table.insert(espObjects, tracer)
+end
+
+function clearESP()
+    for _, obj in pairs(espObjects) do
+        if obj and obj.Parent then
+            obj:Destroy()
+        end
+    end
+    espObjects = {}
+end
+
+function refreshESP()
+    clearESP()
+    updateESP()
+end
+
+-- Auto Walk Function
+function autoWalk()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        local humanoid = char.Humanoid
+        humanoid.WalkSpeed = 16
+        -- Add auto walk logic here
+    end
+end
+
+-- Initialize
+updateContent("MAIN")
+tabButtons["MAIN"].indicator.BackgroundTransparency = 0
+tabButtons["MAIN"].btn.TextColor3 = colors.accent
+
+-- Animation on open
+mainFrame.BackgroundTransparency = 1
+TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    BackgroundTransparency = 0.05
+}):Play()
+
+print("[ERVO HUB] Loaded successfully!")
