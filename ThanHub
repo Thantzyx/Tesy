@@ -1,4 +1,4 @@
-	local Players = game:GetService("Players")
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -7,179 +7,262 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
-local TABS = {
-	{
-		name = "Combat",
-		items = {
-			{name = "Melee Aimbot"},
-			{name = "Auto Steal Nearest"},
-			{name = "Auto Walk"},
-			{name = "Lock Target"},
-			{name = "Silent Aim"},
-			{name = "Reach Extend"},
-		}
-	},
-	{
-		name = "Player",
-		items = {
-			{name = "Infinite Jump"},
-			{name = "Speed Hack"},
-			{name = "No Clip"},
-			{name = "Anti Ragdoll"},
-			{name = "Auto Rejoin"},
-		}
-	},
-	{
-		name = "Visual",
-		items = {
-			{name = "ESP Players"},
-			{name = "Chams"},
-			{name = "Full Bright"},
-			{name = "Name Tags"},
-		}
-	},
-	{
-		name = "Settings",
-		items = {
-			{name = "Hide on Death"},
-			{name = "Mobile Mode"},
-			{name = "Notifications"},
-			{name = "Keybind Menu"},
-		}
-	},
+-- ── TOGGLES CONFIG ───────────────────────────────────────
+local TOGGLES = {
+	{name = "Melee Aimbot"},
+	{name = "Auto Steal Nearest"},
+	{name = "Auto Walk"},
+	{name = "Lock Target"},
+	{name = "Silent Aim"},
+	{name = "Reach Extend"},
+	{name = "Infinite Jump"},
+	{name = "Speed Hack"},
+	{name = "No Clip"},
+	{name = "ESP Players"},
+	{name = "Full Bright"},
+	{name = "Anti Ragdoll"},
 }
 
+-- ── SCREEN GUI ───────────────────────────────────────────
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ThanHubMain"
+screenGui.Name = "ThanHub"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local ok = pcall(function() screenGui.Parent = PlayerGui end)
 if not ok then screenGui.Parent = game:GetService("CoreGui") end
 
--- Match Kawatan sizing exactly
-local guiW    = isMobile and 230 or 255
+local guiW    = isMobile and 240 or 260
 local guiH    = isMobile and 460 or 500
 local headerH = isMobile and 62  or 68
-local tabBarH = isMobile and 40  or 44
-local rowH    = isMobile and 54  or 58
+local rowH    = isMobile and 52  or 56
+local panelW  = isMobile and 320 or 380
+local panelH  = isMobile and 240 or 280
 
--- Colors matching Kawatan reference
-local C_BG        = Color3.fromRGB(18, 18, 24)   -- semi-transparent dark
-local C_HEADER    = Color3.fromRGB(18, 18, 24)
-local C_ROW       = Color3.fromRGB(22, 22, 30)
-local C_DIVIDER   = Color3.fromRGB(38, 38, 52)
-local C_BLUE      = Color3.fromRGB(50, 120, 230)
-local C_BLUE_DIM  = Color3.fromRGB(30, 80, 180)
-local C_TEXT      = Color3.fromRGB(205, 205, 218)
-local C_MUTED     = Color3.fromRGB(85,  85, 105)
-local C_KNOB_OFF  = Color3.fromRGB(105, 105, 125)
-local C_TRACK_OFF = Color3.fromRGB(38,  38,  52)
+local C_BG       = Color3.fromRGB(18, 18, 24)
+local C_HEADER   = Color3.fromRGB(18, 18, 24)
+local C_ROW      = Color3.fromRGB(22, 22, 30)
+local C_DIVIDER  = Color3.fromRGB(38, 38, 52)
+local C_BLUE     = Color3.fromRGB(50, 120, 230)
+local C_BLUE_DIM = Color3.fromRGB(30, 80, 180)
+local C_TEXT     = Color3.fromRGB(205, 205, 218)
+local C_MUTED    = Color3.fromRGB(85, 85, 105)
+local C_KNOB_OFF = Color3.fromRGB(105, 105, 125)
+local C_TRACK_OFF= Color3.fromRGB(38, 38, 52)
+local BG_TRANS   = 0.28
 
--- ── MAIN FRAME ───────────────────────────────────────────
+-- ══════════════════════════════════════════════════════════
+--  LOADING SCREEN
+-- ══════════════════════════════════════════════════════════
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.new(1,0,1,0)
+overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+overlay.BackgroundTransparency = 0.38
+overlay.BorderSizePixel = 0
+overlay.ZIndex = 1
+overlay.Parent = screenGui
+
+local function spawnDots(parent, count)
+	for i = 1, count do
+		local dot = Instance.new("Frame", parent)
+		dot.Size = UDim2.new(0, math.random(2,4), 0, math.random(2,4))
+		dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
+		dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+		dot.BackgroundTransparency = math.random(55,80)/100
+		dot.BorderSizePixel = 0
+		dot.ZIndex = 2
+		Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+		task.delay(math.random()*2, function()
+			TweenService:Create(dot,
+				TweenInfo.new(math.random(15,35)/10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+				{BackgroundTransparency = math.random(10,35)/100}):Play()
+		end)
+	end
+end
+
+local loadPanel = Instance.new("Frame")
+loadPanel.Size = UDim2.new(0, panelW, 0, panelH)
+loadPanel.Position = UDim2.new(0.5,-panelW/2, 0.5,-panelH/2)
+loadPanel.BackgroundColor3 = C_BG
+loadPanel.BackgroundTransparency = BG_TRANS
+loadPanel.BorderSizePixel = 0
+loadPanel.ZIndex = 3
+loadPanel.Parent = screenGui
+Instance.new("UICorner", loadPanel).CornerRadius = UDim.new(0,18)
+local lpSt = Instance.new("UIStroke", loadPanel)
+lpSt.Color = C_BLUE; lpSt.Thickness = 1.5; lpSt.Transparency = 0.15
+spawnDots(loadPanel, 30)
+
+-- Spinning ring
+local ring = Instance.new("Frame", loadPanel)
+ring.Size = UDim2.new(0,72,0,72)
+ring.Position = UDim2.new(0.5,-36, 0, isMobile and 28 or 34)
+ring.BackgroundTransparency = 1
+ring.ZIndex = 5
+Instance.new("UICorner", ring).CornerRadius = UDim.new(1,0)
+local ringSt = Instance.new("UIStroke", ring)
+ringSt.Color = Color3.fromRGB(60,60,78); ringSt.Thickness = 2.5; ringSt.Transparency = 0.2
+
+local spinDot = Instance.new("Frame", ring)
+spinDot.Size = UDim2.new(0,10,0,10)
+spinDot.AnchorPoint = Vector2.new(0.5,0.5)
+spinDot.Position = UDim2.new(0.5,0,0,-4)
+spinDot.BackgroundColor3 = Color3.fromRGB(210,210,230)
+spinDot.BorderSizePixel = 0; spinDot.ZIndex = 7
+Instance.new("UICorner", spinDot).CornerRadius = UDim.new(1,0)
+
+-- T letter inside ring
+local ringT = Instance.new("TextLabel", ring)
+ringT.Size = UDim2.new(1,0,1,0)
+ringT.BackgroundTransparency = 1
+ringT.Text = "T"
+ringT.TextColor3 = Color3.fromRGB(190,190,210)
+ringT.TextSize = isMobile and 22 or 26
+ringT.Font = Enum.Font.GothamBold
+ringT.TextXAlignment = Enum.TextXAlignment.Center
+ringT.TextYAlignment = Enum.TextYAlignment.Center
+ringT.ZIndex = 6
+
+-- Title
+local loadTitle = Instance.new("TextLabel", loadPanel)
+loadTitle.Size = UDim2.new(1,0,0,36)
+loadTitle.Position = UDim2.new(0,0,0, isMobile and 108 or 118)
+loadTitle.BackgroundTransparency = 1
+loadTitle.Text = "THAN HUB"
+loadTitle.TextColor3 = Color3.fromRGB(230,230,245)
+loadTitle.TextSize = isMobile and 22 or 28
+loadTitle.Font = Enum.Font.GothamBold
+loadTitle.TextXAlignment = Enum.TextXAlignment.Center
+loadTitle.ZIndex = 5
+
+-- accent line
+local titleLine = Instance.new("Frame", loadPanel)
+titleLine.Size = UDim2.new(0,0,0,1)
+titleLine.Position = UDim2.new(0.5,0,0, isMobile and 148 or 158)
+titleLine.BackgroundColor3 = C_BLUE
+titleLine.BackgroundTransparency = 0.4
+titleLine.BorderSizePixel = 0; titleLine.ZIndex = 5
+
+-- status
+local loadStatus = Instance.new("TextLabel", loadPanel)
+loadStatus.Size = UDim2.new(0.85,0,0,18)
+loadStatus.Position = UDim2.new(0.075,0,0, isMobile and 158 or 170)
+loadStatus.BackgroundTransparency = 1
+loadStatus.Text = "Initializing..."
+loadStatus.TextColor3 = C_MUTED
+loadStatus.TextSize = isMobile and 11 or 13
+loadStatus.Font = Enum.Font.Gotham
+loadStatus.TextXAlignment = Enum.TextXAlignment.Center
+loadStatus.ZIndex = 5
+
+-- percent
+local loadPct = Instance.new("TextLabel", loadPanel)
+loadPct.Size = UDim2.new(0.85,0,0,16)
+loadPct.Position = UDim2.new(0.075,0,0, isMobile and 178 or 192)
+loadPct.BackgroundTransparency = 1
+loadPct.Text = "0%"
+loadPct.TextColor3 = Color3.fromRGB(180,180,200)
+loadPct.TextSize = isMobile and 10 or 11
+loadPct.Font = Enum.Font.GothamBold
+loadPct.TextXAlignment = Enum.TextXAlignment.Center
+loadPct.ZIndex = 5
+
+-- bar bg
+local barBg = Instance.new("Frame", loadPanel)
+barBg.Size = UDim2.new(0.75,0,0,5)
+barBg.Position = UDim2.new(0.125,0,0, isMobile and 200 or 216)
+barBg.BackgroundColor3 = Color3.fromRGB(35,35,48)
+barBg.BorderSizePixel = 0; barBg.ZIndex = 5
+Instance.new("UICorner", barBg).CornerRadius = UDim.new(1,0)
+
+local barFill = Instance.new("Frame", barBg)
+barFill.Size = UDim2.new(0,0,1,0)
+barFill.BackgroundColor3 = Color3.fromRGB(200,200,220)
+barFill.BorderSizePixel = 0; barFill.ZIndex = 6
+Instance.new("UICorner", barFill).CornerRadius = UDim.new(1,0)
+
+-- bar shimmer
+local barShimmer = Instance.new("Frame", barFill)
+barShimmer.Size = UDim2.new(0,36,1,0)
+barShimmer.Position = UDim2.new(-0.3,0,0,0)
+barShimmer.BackgroundColor3 = Color3.fromRGB(255,255,255)
+barShimmer.BackgroundTransparency = 0.65
+barShimmer.BorderSizePixel = 0; barShimmer.ZIndex = 7
+Instance.new("UICorner", barShimmer).CornerRadius = UDim.new(1,0)
+
+local function loopShimmer()
+	barShimmer.Position = UDim2.new(-0.3,0,0,0)
+	local t = TweenService:Create(barShimmer,
+		TweenInfo.new(0.85, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{Position = UDim2.new(1.1,0,0,0)})
+	t:Play()
+	t.Completed:Connect(function() task.delay(0.4, loopShimmer) end)
+end
+task.delay(0.2, loopShimmer)
+
+-- ══════════════════════════════════════════════════════════
+--  MAIN GUI (built but hidden)
+-- ══════════════════════════════════════════════════════════
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, guiW, 0, guiH)
 mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)
 mainFrame.BackgroundColor3 = C_BG
-mainFrame.BackgroundTransparency = 0.28   -- transparent like Kawatan
+mainFrame.BackgroundTransparency = BG_TRANS
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,16)
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
+local mfStroke = Instance.new("UIStroke", mainFrame)
+mfStroke.Color = C_BLUE; mfStroke.Thickness = 1.8; mfStroke.Transparency = 0.1
 
-local mfStroke = Instance.new("UIStroke")
-mfStroke.Color = C_BLUE
-mfStroke.Thickness = 1.8
-mfStroke.Transparency = 0.1
-mfStroke.Parent = mainFrame
-
--- pop-in
-mainFrame.Size = UDim2.new(0,0,0,0)
-mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, 0)
-TweenService:Create(mainFrame,
-	TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-	{Size = UDim2.new(0,guiW,0,guiH),
-	 Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)}):Play()
-
--- ── HEADER ───────────────────────────────────────────────
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, headerH)
+-- header
+local header = Instance.new("Frame", mainFrame)
+header.Size = UDim2.new(1,0,0,headerH)
 header.BackgroundColor3 = C_HEADER
-header.BackgroundTransparency = 0.28
-header.BorderSizePixel = 0
-header.ZIndex = 5
-header.Parent = mainFrame
-
+header.BackgroundTransparency = BG_TRANS
+header.BorderSizePixel = 0; header.ZIndex = 5
 Instance.new("UICorner", header).CornerRadius = UDim.new(0,16)
 
--- square off bottom of header
 local hSq = Instance.new("Frame", header)
-hSq.Size = UDim2.new(1,0,0,16)
-hSq.Position = UDim2.new(0,0,1,-16)
-hSq.BackgroundColor3 = C_HEADER
-hSq.BackgroundTransparency = 0.28
-hSq.BorderSizePixel = 0
-hSq.ZIndex = 5
+hSq.Size = UDim2.new(1,0,0,16); hSq.Position = UDim2.new(0,0,1,-16)
+hSq.BackgroundColor3 = C_HEADER; hSq.BackgroundTransparency = BG_TRANS
+hSq.BorderSizePixel = 0; hSq.ZIndex = 5
 
--- blue left accent bar
 local accentBar = Instance.new("Frame", header)
-accentBar.Size = UDim2.new(0,3,0,26)
-accentBar.Position = UDim2.new(0,8,0.5,-13)
-accentBar.BackgroundColor3 = C_BLUE
-accentBar.BorderSizePixel = 0
-accentBar.ZIndex = 6
+accentBar.Size = UDim2.new(0,3,0,26); accentBar.Position = UDim2.new(0,8,0.5,-13)
+accentBar.BackgroundColor3 = C_BLUE; accentBar.BorderSizePixel = 0; accentBar.ZIndex = 6
 Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0,4)
 
--- title
 local titleLbl = Instance.new("TextLabel", header)
-titleLbl.Size = UDim2.new(1,-64,0,24)
-titleLbl.Position = UDim2.new(0,18,0,10)
-titleLbl.BackgroundTransparency = 1
-titleLbl.Text = "ThanHub"
-titleLbl.TextColor3 = C_BLUE
-titleLbl.TextSize = isMobile and 17 or 19
-titleLbl.Font = Enum.Font.GothamBold
-titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+titleLbl.Size = UDim2.new(1,-64,0,24); titleLbl.Position = UDim2.new(0,18,0,10)
+titleLbl.BackgroundTransparency = 1; titleLbl.Text = "ThanHub"
+titleLbl.TextColor3 = C_BLUE; titleLbl.TextSize = isMobile and 17 or 19
+titleLbl.Font = Enum.Font.GothamBold; titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 titleLbl.ZIndex = 6
 
--- subtitle
 local subLbl = Instance.new("TextLabel", header)
 subLbl.Size = UDim2.new(1,-64,0,14)
 subLbl.Position = UDim2.new(0,18,0, isMobile and 34 or 36)
-subLbl.BackgroundTransparency = 1
-subLbl.Text = "Tiktok: @ioa.fan"
-subLbl.TextColor3 = C_MUTED
-subLbl.TextSize = isMobile and 9 or 10
-subLbl.Font = Enum.Font.Gotham
-subLbl.TextXAlignment = Enum.TextXAlignment.Left
+subLbl.BackgroundTransparency = 1; subLbl.Text = "discord.gg/thanhub"
+subLbl.TextColor3 = C_MUTED; subLbl.TextSize = isMobile and 9 or 10
+subLbl.Font = Enum.Font.Gotham; subLbl.TextXAlignment = Enum.TextXAlignment.Left
 subLbl.ZIndex = 6
 
--- minimise button
 local minimized = false
 local minBtn = Instance.new("TextButton", header)
-minBtn.Size = UDim2.new(0,22,0,22)
-minBtn.Position = UDim2.new(1,-52,0.5,-11)
-minBtn.BackgroundColor3 = Color3.fromRGB(38,38,52)
-minBtn.Text = "−"
-minBtn.TextColor3 = C_MUTED
-minBtn.TextSize = 14
-minBtn.Font = Enum.Font.GothamBold
-minBtn.BorderSizePixel = 0
-minBtn.ZIndex = 7
+minBtn.Size = UDim2.new(0,22,0,22); minBtn.Position = UDim2.new(1,-52,0.5,-11)
+minBtn.BackgroundColor3 = Color3.fromRGB(38,38,52); minBtn.Text = "−"
+minBtn.TextColor3 = C_MUTED; minBtn.TextSize = 14
+minBtn.Font = Enum.Font.GothamBold; minBtn.BorderSizePixel = 0; minBtn.ZIndex = 7
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,6)
 
--- close button
 local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0,22,0,22)
-closeBtn.Position = UDim2.new(1,-26,0.5,-11)
-closeBtn.BackgroundColor3 = Color3.fromRGB(190,45,45)
-closeBtn.Text = "✕"
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.TextSize = 11
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.BorderSizePixel = 0
-closeBtn.ZIndex = 7
+closeBtn.Size = UDim2.new(0,22,0,22); closeBtn.Position = UDim2.new(1,-26,0.5,-11)
+closeBtn.BackgroundColor3 = Color3.fromRGB(190,45,45); closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255); closeBtn.TextSize = 11
+closeBtn.Font = Enum.Font.GothamBold; closeBtn.BorderSizePixel = 0; closeBtn.ZIndex = 7
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -187,47 +270,17 @@ closeBtn.MouseButton1Click:Connect(function()
 		{Size=UDim2.new(0,0,0,0)}):Play()
 	task.delay(0.28, function() screenGui:Destroy() end)
 end)
-
 minBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	minBtn.Text = minimized and "+" or "−"
-	TweenService:Create(mainFrame,
-		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+	TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
 		{Size = UDim2.new(0,guiW,0, minimized and headerH or guiH)}):Play()
 end)
 
--- ── TAB BAR ──────────────────────────────────────────────
-local tabBar = Instance.new("Frame", mainFrame)
-tabBar.Size = UDim2.new(1,0,0,tabBarH)
-tabBar.Position = UDim2.new(0,0,0,headerH)
-tabBar.BackgroundColor3 = Color3.fromRGB(20,20,28)
-tabBar.BackgroundTransparency = 0.28
-tabBar.BorderSizePixel = 0
-tabBar.ZIndex = 4
-
-local tbLayout = Instance.new("UIListLayout", tabBar)
-tbLayout.FillDirection = Enum.FillDirection.Horizontal
-tbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-tbLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tbLayout.Padding = UDim.new(0,4)
-
-local tbPad = Instance.new("UIPadding", tabBar)
-tbPad.PaddingLeft = UDim.new(0,6)
-tbPad.PaddingTop = UDim.new(0,5)
-tbPad.PaddingBottom = UDim.new(0,5)
-
--- divider line under tab bar
-local tabDivLine = Instance.new("Frame", tabBar)
-tabDivLine.Size = UDim2.new(1,0,0,1)
-tabDivLine.Position = UDim2.new(0,0,1,-1)
-tabDivLine.BackgroundColor3 = C_DIVIDER
-tabDivLine.BorderSizePixel = 0
-tabDivLine.ZIndex = 5
-
--- ── SCROLL ───────────────────────────────────────────────
+-- scroll
 local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
-scrollFrame.Size = UDim2.new(1,0,1,-(headerH+tabBarH))
-scrollFrame.Position = UDim2.new(0,0,0,headerH+tabBarH)
+scrollFrame.Size = UDim2.new(1,0,1,-headerH)
+scrollFrame.Position = UDim2.new(0,0,0,headerH)
 scrollFrame.BackgroundTransparency = 1
 scrollFrame.BorderSizePixel = 0
 scrollFrame.ScrollBarThickness = 2
@@ -235,11 +288,9 @@ scrollFrame.ScrollBarImageColor3 = C_BLUE
 scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
 scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scrollFrame.ZIndex = 3
+Instance.new("UIListLayout", scrollFrame).SortOrder = Enum.SortOrder.LayoutOrder
 
-local scLayout = Instance.new("UIListLayout", scrollFrame)
-scLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- ── DRAG ─────────────────────────────────────────────────
+-- drag
 local dragging, dragStart, startPos2 = false, nil, nil
 header.InputBegan:Connect(function(inp)
 	if inp.UserInputType == Enum.UserInputType.MouseButton1
@@ -262,85 +313,58 @@ UserInputService.InputEnded:Connect(function(inp)
 	or inp.UserInputType == Enum.UserInputType.Touch then dragging=false end
 end)
 
--- ── TOGGLE ROW ───────────────────────────────────────────
-local function createRow(name, order, parent)
-	local row = Instance.new("Frame", parent)
+-- toggle rows
+local function createRow(name, order)
+	local row = Instance.new("Frame", scrollFrame)
 	row.Name = name
 	row.Size = UDim2.new(1,0,0,rowH)
 	row.BackgroundColor3 = C_ROW
-	row.BackgroundTransparency = 0.28
+	row.BackgroundTransparency = BG_TRANS
 	row.BorderSizePixel = 0
-	row.LayoutOrder = order
-	row.ZIndex = 3
+	row.LayoutOrder = order; row.ZIndex = 3
 
-	-- bottom divider
 	local div = Instance.new("Frame", row)
-	div.Size = UDim2.new(1,0,0,1)
-	div.Position = UDim2.new(0,0,1,-1)
-	div.BackgroundColor3 = C_DIVIDER
-	div.BackgroundTransparency = 0.2
-	div.BorderSizePixel = 0
-	div.ZIndex = 4
+	div.Size = UDim2.new(1,0,0,1); div.Position = UDim2.new(0,0,1,-1)
+	div.BackgroundColor3 = C_DIVIDER; div.BackgroundTransparency = 0.2
+	div.BorderSizePixel = 0; div.ZIndex = 4
 
-	-- label
 	local lbl = Instance.new("TextLabel", row)
-	lbl.Size = UDim2.new(1,-72,1,0)
-	lbl.Position = UDim2.new(0,14,0,0)
-	lbl.BackgroundTransparency = 1
-	lbl.Text = name
-	lbl.TextColor3 = C_TEXT
-	lbl.TextSize = isMobile and 13 or 14
+	lbl.Size = UDim2.new(1,-72,1,0); lbl.Position = UDim2.new(0,14,0,0)
+	lbl.BackgroundTransparency = 1; lbl.Text = name
+	lbl.TextColor3 = C_TEXT; lbl.TextSize = isMobile and 13 or 14
 	lbl.Font = Enum.Font.GothamBold
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.ZIndex = 4
+	lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.ZIndex = 4
 
-	-- track (bigger to match Kawatan)
 	local track = Instance.new("Frame", row)
-	track.Size = UDim2.new(0,46,0,26)
-	track.Position = UDim2.new(1,-56,0.5,-13)
-	track.BackgroundColor3 = C_TRACK_OFF
-	track.BorderSizePixel = 0
-	track.ZIndex = 4
+	track.Size = UDim2.new(0,46,0,26); track.Position = UDim2.new(1,-56,0.5,-13)
+	track.BackgroundColor3 = C_TRACK_OFF; track.BorderSizePixel = 0; track.ZIndex = 4
 	Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
 	local tSt = Instance.new("UIStroke", track)
-	tSt.Color = Color3.fromRGB(55,55,72)
-	tSt.Thickness = 1
-	tSt.Transparency = 0.1
+	tSt.Color = Color3.fromRGB(55,55,72); tSt.Thickness = 1; tSt.Transparency = 0.1
 
-	-- knob (bigger)
 	local knob = Instance.new("Frame", track)
-	knob.Size = UDim2.new(0,20,0,20)
-	knob.Position = UDim2.new(0,3,0.5,-10)
-	knob.BackgroundColor3 = C_KNOB_OFF
-	knob.BorderSizePixel = 0
-	knob.ZIndex = 5
+	knob.Size = UDim2.new(0,20,0,20); knob.Position = UDim2.new(0,3,0.5,-10)
+	knob.BackgroundColor3 = C_KNOB_OFF; knob.BorderSizePixel = 0; knob.ZIndex = 5
 	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
-	-- click zone
 	local btn = Instance.new("TextButton", row)
-	btn.Size = UDim2.new(1,0,1,0)
-	btn.BackgroundTransparency = 1
-	btn.Text = ""
-	btn.ZIndex = 6
+	btn.Size = UDim2.new(1,0,1,0); btn.BackgroundTransparency = 1
+	btn.Text = ""; btn.ZIndex = 6
 
 	local isOn = false
 	local function set(state)
 		isOn = state
-		TweenService:Create(knob,
-			TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		TweenService:Create(knob, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 			{Position = state and UDim2.new(1,-23,0.5,-10) or UDim2.new(0,3,0.5,-10),
 			 BackgroundColor3 = state and Color3.fromRGB(255,255,255) or C_KNOB_OFF}):Play()
-		TweenService:Create(track,
-			TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		TweenService:Create(track, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 			{BackgroundColor3 = state and C_BLUE or C_TRACK_OFF}):Play()
 		TweenService:Create(tSt, TweenInfo.new(0.18),
 			{Color = state and C_BLUE_DIM or Color3.fromRGB(55,55,72)}):Play()
 		if state then
 			local rip = Instance.new("Frame", row)
-			rip.Size = UDim2.new(0,0,0,0)
-			rip.Position = UDim2.new(0.5,0,0.5,0)
-			rip.BackgroundColor3 = C_BLUE
-			rip.BackgroundTransparency = 0.72
+			rip.Size = UDim2.new(0,0,0,0); rip.Position = UDim2.new(0.5,0,0.5,0)
+			rip.BackgroundColor3 = C_BLUE; rip.BackgroundTransparency = 0.72
 			rip.BorderSizePixel = 0; rip.ZIndex = 5
 			Instance.new("UICorner", rip).CornerRadius = UDim.new(1,0)
 			TweenService:Create(rip, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -356,68 +380,74 @@ local function createRow(name, order, parent)
 		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.1}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=0.28}):Play()
+		TweenService:Create(row,TweenInfo.new(0.1),{BackgroundTransparency=BG_TRANS}):Play()
 	end)
 end
 
--- ── TABS ─────────────────────────────────────────────────
-local tabPages   = {}
-local tabButtons = {}
-local activeTab  = nil
-
-local function switchTab(name)
-	if activeTab == name then return end
-	activeTab = name
-	for n,pg in pairs(tabPages) do pg.Visible = (n==name) end
-	for n,tb in pairs(tabButtons) do
-		local on = (n==name)
-		TweenService:Create(tb, TweenInfo.new(0.15),
-			{BackgroundColor3 = on and C_BLUE or Color3.fromRGB(28,28,40),
-			 BackgroundTransparency = on and 0 or 0.1}):Play()
-		tb.TextColor3 = on and Color3.fromRGB(255,255,255) or C_MUTED
-	end
+for i, t in ipairs(TOGGLES) do
+	createRow(t.name, i)
 end
 
-for _, tab in ipairs(TABS) do
-	-- tab btn — sized to fit 4 across like Kawatan
-	local tb = Instance.new("TextButton", tabBar)
-	tb.Size = UDim2.new(0, math.floor((guiW-20)/4)-2, 0, tabBarH-10)
-	tb.BackgroundColor3 = Color3.fromRGB(28,28,40)
-	tb.BackgroundTransparency = 0.1
-	tb.Text = tab.name
-	tb.TextColor3 = C_MUTED
-	tb.TextSize = isMobile and 10 or 11
-	tb.Font = Enum.Font.GothamBold
-	tb.BorderSizePixel = 0
-	tb.ZIndex = 5
-	Instance.new("UICorner", tb).CornerRadius = UDim.new(0,8)
-	tabButtons[tab.name] = tb
+-- ══════════════════════════════════════════════════════════
+--  LOADING SEQUENCE → REVEAL MAIN
+-- ══════════════════════════════════════════════════════════
+local angle = 0
+local spinConn = RunService.Heartbeat:Connect(function(dt)
+	angle = angle + dt * 210
+	ring.Rotation = angle
+end)
 
-	local pg = Instance.new("Frame", scrollFrame)
-	pg.Name = tab.name.."Page"
-	pg.Size = UDim2.new(1,0,0,0)
-	pg.AutomaticSize = Enum.AutomaticSize.Y
-	pg.BackgroundTransparency = 1
-	pg.BorderSizePixel = 0
-	pg.Visible = false
-	pg.LayoutOrder = 1
-	pg.ZIndex = 3
+task.delay(0.25, function()
+	TweenService:Create(titleLine, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{Size = UDim2.new(0.32,0,0,1),
+		 Position = UDim2.new(0.34,0,0, isMobile and 148 or 158)}):Play()
+end)
 
-	local pgL = Instance.new("UIListLayout", pg)
-	pgL.SortOrder = Enum.SortOrder.LayoutOrder
-	pgL.Padding = UDim.new(0,0)
+local steps = {
+	{pct=10,  msg="Initializing environment..."},
+	{pct=25,  msg="Connecting to server..."},
+	{pct=44,  msg="Loading assets..."},
+	{pct=60,  msg="Building GUI..."},
+	{pct=76,  msg="Applying configurations..."},
+	{pct=90,  msg="Almost ready..."},
+	{pct=100, msg="Complete!"},
+}
 
-	for j, item in ipairs(tab.items) do
-		createRow(item.name, j, pg)
+task.spawn(function()
+	for _, step in ipairs(steps) do
+		task.wait(math.random(40,65)/100)
+		TweenService:Create(loadStatus, TweenInfo.new(0.15), {TextTransparency=1}):Play()
+		task.wait(0.15)
+		loadStatus.Text = step.msg
+		TweenService:Create(loadStatus, TweenInfo.new(0.15), {TextTransparency=0}):Play()
+		loadPct.Text = step.pct.."%"
+		TweenService:Create(barFill, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{Size = UDim2.new(step.pct/100, 0, 1, 0)}):Play()
 	end
 
-	tabPages[tab.name] = pg
-	tb.MouseButton1Click:Connect(function() switchTab(tab.name) end)
-end
+	task.wait(0.4)
+	spinConn:Disconnect()
+	TweenService:Create(barFill, TweenInfo.new(0.18), {BackgroundColor3=Color3.fromRGB(255,255,255)}):Play()
+	task.wait(0.22)
 
-switchTab(TABS[1].name)
+	-- collapse loader
+	TweenService:Create(loadPanel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+		{Size=UDim2.new(0,0,0,0), Position=UDim2.new(0.5,0,0.5,0)}):Play()
+	TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency=1}):Play()
+	task.wait(0.38)
+	loadPanel:Destroy()
+	overlay:Destroy()
 
--- ── STROKE PULSE ─────────────────────────────────────────
+	-- reveal main GUI
+	mainFrame.Visible = true
+	mainFrame.Size = UDim2.new(0,0,0,0)
+	mainFrame.Position = UDim2.new(0, isMobile and 8 or 20, 0.5, 0)
+	TweenService:Create(mainFrame, TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{Size = UDim2.new(0,guiW,0,guiH),
+		 Position = UDim2.new(0, isMobile and 8 or 20, 0.5, -guiH/2)}):Play()
+end)
+
+-- stroke pulse
 RunService.Heartbeat:Connect(function()
 	local a = (math.sin(tick()*1.4)+1)/2
 	mfStroke.Transparency = 0.05 + a*0.45
